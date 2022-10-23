@@ -1,4 +1,6 @@
+const Product = require("../model/product");
 
-module.exports.homePage = async function(req, res){
-    res.send("Home Page");
+module.exports.homePage = async function (req, res) {
+    const products = await Product.find();
+    res.render('index', { title: 'Home Page', products, })
 }

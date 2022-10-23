@@ -16,25 +16,26 @@ module.exports.Register = async function (req, res) {
 
   await user.save();
 
-  res.send(user);
-  req.session.user = false;
+  res.redirect('/')
 };
 
 module.exports.Login = async function (req, res) {
   try {
+    req.session.isUdmin = false;
     const { password, phone } = req.body;
 
     const user = await User.findOne({ phone });
 
     const hashEncode = await bcrypt.compare(password, user.password);
 
-    console.log(hashEncode);
 
-    if (hashEncode) {
-      return res.send("Logined");
+    if (!hashEncode) {
+      return res.send("Password or Username is incorrect");
     }
 
-    res.send("Password or Username is incorrect");
+    res.redirect('/');
+    req.session.isUser = true;
+    req.session.user = user
   } catch (error) {
     res.send(error)
   }

@@ -1,48 +1,52 @@
 const express = require("express");
 const app = express();
-const mongoose = require("mongoose");
+const exhbs = require('express-handlebars');
 require("dotenv").config();
-const port = process.env.PORT || 3000;
-const session = require('express-session')
+const port = process.env.PORT || 5000;
+const session = require('express-session');
+const path = require('path');
+const {auth} = require('./middleware/auth')
 
-
-const sess = {
-  secret: "key",
-};
-
-if (app.get("env") === "production") {
-  app.set("trust proxy", 1); 
-  sess.cookie.secure = true; 
-}
-
-app.use(session(sess));
-
-app.use(express.urlencoded({ extended: true }));
-
-const conntection = async function (err) {
-  try {
-    if (err) {
-      console.log(err);
-    }
-    await mongoose.connect(
-      "mongodb+srv://Akbarshox:a121312u@cluster0.1cfxxcc.mongodb.net/shop"
-    );
-    console.log("Mongo DB connected");
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-conntection();
 
 //Routes
 const indexRouter = require("./routes/index");
 const productsRouter = require("./routes/products");
 const userRouter = require("./routes/auth");
 
+app.use(express.urlencoded({ extended: true }));
+
+require('./helper/database')(process.env.MONGO_URI)
+
+app.use(session({
+  secret: process.env.SECTER_KEY,
+  resave: false,
+  saveUninitialized: false
+}));
+
+
+const hbs = exhbs.create({
+  layoutsDir: 'views/layouts',
+  layout: 'layout',
+  extname: 'hbs',
+  runtimeOptions: {
+    allowProtoMethodsByDefault: true,
+    allowProtoPropertiesByDefault: true
+  }
+})
+
+
+
+app.set('views', path.join(__dirname, 'views'));
+app.engine('hbs', hbs.engine)
+app.set('view engine', 'hbs');
+
+
+app.use("/user", userRouter);
+
+app.use(auth)
+
 app.use("/", indexRouter);
 app.use("/products", productsRouter);
-app.use("/user", userRouter);
 
 app.listen(port, () => {
   console.log(`Server worked ${port}`);
